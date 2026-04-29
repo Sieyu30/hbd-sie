@@ -16,21 +16,34 @@
             background-color: var(--bg-color); 
             margin: 0; padding: 20px;
             display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
         }
+
+        /* --- 背景裝飾小花 --- */
+        .bg-flower {
+            position: fixed; z-index: -1; opacity: 0.4;
+            pointer-events: none; user-select: none;
+        }
+        .f-1 { top: 5%; left: -20px; font-size: 60px; transform: rotate(-15deg); }
+        .f-2 { top: 15%; right: -10px; font-size: 40px; transform: rotate(20deg); }
+        .f-3 { bottom: 10%; left: 10%; font-size: 50px; transform: rotate(10deg); }
+        .f-4 { bottom: 20%; right: 5%; font-size: 70px; transform: rotate(-25deg); }
+        .f-5 { top: 50%; left: -30px; font-size: 45px; }
 
         /* 第一頁：畫板畫面 */
         #drawingPage {
             display: flex; flex-direction: column; align-items: center;
             width: 100%; max-width: 400px;
-            animation: fadeIn 0.5s ease;
+            animation: fadeIn 0.5s ease; z-index: 1;
         }
 
         /* 第二頁：花圃與照片畫面 */
         #resultPage {
-            display: none; 
-            flex-direction: column; align-items: center;
+            display: none; flex-direction: column; align-items: center;
             width: 100%; max-width: 450px;
-            animation: fadeIn 0.8s ease;
+            animation: fadeIn 0.8s ease; z-index: 1;
         }
 
         .page-title { color: var(--brown-light); font-size: 1.6em; margin-bottom: 15px; font-weight: bold; text-align: center; }
@@ -38,8 +51,7 @@
         .canvas-wrapper {
             position: relative; background-color: #fcfaf5;
             background-image: radial-gradient(#e0ddd5 1px, transparent 0);
-            background-size: 8px 8px; 
-            border: 10px solid #fff; border-radius: 5px;
+            background-size: 8px 8px; border: 10px solid #fff; border-radius: 5px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 15px;
         }
         canvas { cursor: crosshair; touch-action: none; display: block; }
@@ -48,7 +60,7 @@
             display: flex; gap: 8px; background: #fff; padding: 10px; 
             border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        .tool-btn { padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; background: white; font-weight: bold; }
+        .tool-btn { padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; background: white; font-weight: bold; font-size: 14px; }
         .tool-btn.active { background: var(--brown-light); color: white; border-color: var(--brown-light); }
 
         .controls { width: 100%; display: flex; flex-direction: column; gap: 12px; }
@@ -56,6 +68,12 @@
         input[type="text"] { padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; width: 100%; box-sizing: border-box; }
         
         .btn-submit { background: var(--brown-light); color: white; padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1.2em; box-shadow: 0 4px 10px rgba(139,94,60,0.3); }
+
+        /* 「看看大家送的花」按鈕樣式 */
+        .btn-view-only {
+            background: transparent; color: #999; text-decoration: underline;
+            border: none; margin-top: 10px; cursor: pointer; font-size: 0.9em;
+        }
 
         /* 照片框與集結區 */
         .photo-frame { 
@@ -73,37 +91,18 @@
         
         .flower-img { 
             width: 85px; height: 85px; object-fit: contain; 
-            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.1));
-            transition: transform 0.2s;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.1)); transition: transform 0.2s;
         }
         
-        .flower-item:active .flower-img { transform: scale(0.9); }
-        
-        /* 留言框改為初始隱藏，點擊才出現 */
         .flower-msg { 
-            background: rgba(255,255,255,0.98); 
-            padding: 6px 12px; 
-            border-radius: 12px; 
-            font-size: 14px; 
-            border: 2px solid var(--brown-light); 
-            white-space: nowrap; 
-            font-weight: bold; 
-            color: var(--brown-dark);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin-bottom: 8px;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            pointer-events: none;
-            z-index: 100;
+            background: rgba(255,255,255,0.98); padding: 6px 12px; border-radius: 12px; 
+            font-size: 14px; border: 2px solid var(--brown-light); white-space: nowrap; 
+            font-weight: bold; color: var(--brown-dark); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin-bottom: 8px; opacity: 0; transform: translateY(10px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; z-index: 100;
         }
 
-        /* 點擊後的狀態 */
-        .flower-item.show-msg .flower-msg {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
+        .flower-item.show-msg .flower-msg { opacity: 1; transform: translateY(0); pointer-events: auto; }
 
         .btn-back { 
             margin-top: 25px; background: #fff; color: var(--brown-light); border: 2px solid var(--brown-light);
@@ -121,6 +120,12 @@
 </head>
 <body>
 
+    <div class="bg-flower f-1">🌸</div>
+    <div class="bg-flower f-2">🌼</div>
+    <div class="bg-flower f-3">🌷</div>
+    <div class="bg-flower f-4">🌹</div>
+    <div class="bg-flower f-5">🌻</div>
+
     <div id="drawingPage">
         <h1 class="page-title"> 今天我生日，一起來畫花🎂 </h1>
         <div class="canvas-wrapper">
@@ -128,15 +133,17 @@
         </div>
         <div class="tool-bar">
             <input type="color" id="colorPicker" value="#e63946" style="border:none; width:35px; height:35px; cursor:pointer;">
-            <button class="tool-btn active" id="sizeS" onclick="setSize(3, 'sizeS')"> 細畫筆 </button>
-            <button class="tool-btn" id="sizeM" onclick="setSize(8, 'sizeM')"> 粗畫筆 </button>
-            <button class="tool-btn" id="eraserBtn" onclick="setEraser()"> 橡皮擦 </button>
+            <button class="tool-btn active" id="sizeS" onclick="setSize(3, 'sizeS')">細畫筆</button>
+            <button class="tool-btn" id="sizeM" onclick="setSize(8, 'sizeM')">粗畫筆</button>
+            <button class="tool-btn" id="eraserBtn" onclick="setEraser()">橡皮擦</button>
             <button class="tool-btn" onclick="clearCanvas()">重畫</button>
         </div>
         <div class="controls">
             <div class="message-label">你想對我說的話是？(◕u◕)</div>
             <input type="text" id="messageInput" placeholder="這邊輸入悄悄話...">
             <button class="btn-submit" id="submitBtn" onclick="submitFlower()">送出你的大作看成果</button>
+            <!-- 新增跳過按鈕 -->
+            <button class="btn-view-only" onclick="goToResult()">先去看看大家送的花 bouquet </button>
         </div>
     </div>
 
@@ -147,7 +154,7 @@
             <div class="flowers-overlay" id="flowersOverlay"></div>
         </div>
         <p class="tip-text">點點花朵看悄悄話 👆</p>
-        <button class="btn-back" onclick="goBack()">再送一朵花</button>
+        <button class="btn-back" onclick="goBack()">我也要送一朵花</button>
     </div>
 
     <script>
@@ -190,23 +197,13 @@
         function renderFlower(imgData, msg) {
             const flowerWrap = document.createElement('div');
             flowerWrap.className = 'flower-item';
-            
             const randomX = Math.random() * 50 + 5; 
             const randomY = Math.random() * 35 + 35; 
-            
             flowerWrap.style.left = randomX + '%';
             flowerWrap.style.top = randomY + '%';
             flowerWrap.style.zIndex = Math.floor(randomY);
-
             flowerWrap.innerHTML = `<div class="flower-msg">${msg}</div><img src="${imgData}" class="flower-img">`;
-            
-            // 點擊切換顯示/隱藏留言
-            flowerWrap.onclick = function(e) {
-                e.stopPropagation();
-                // 如果已經顯示，就隱藏；反之亦然
-                this.classList.toggle('show-msg');
-            };
-            
+            flowerWrap.onclick = function(e) { e.stopPropagation(); this.classList.toggle('show-msg'); };
             overlay.appendChild(flowerWrap);
         }
 
@@ -214,23 +211,26 @@
             const message = document.getElementById('messageInput').value;
             if (!message) return alert("請寫句祝福語給我吧！");
             const imageData = canvas.toDataURL();
-            
             submitBtn.innerText = "花花養成中...";
             submitBtn.disabled = true;
-
             fetch(API_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 body: JSON.stringify({ message: message, imageData: imageData })
             }).then(() => {
-                document.getElementById('drawingPage').style.display = 'none';
-                document.getElementById('resultPage').style.display = 'flex';
+                goToResult(); // 改成使用跳轉函數
                 renderFlower(imageData, message);
                 clearCanvas();
                 document.getElementById('messageInput').value = "";
                 submitBtn.innerText = "送出你的大作看成果";
                 submitBtn.disabled = false;
             });
+        }
+
+        // 新增：直接跳轉到結果頁面
+        function goToResult() {
+            document.getElementById('drawingPage').style.display = 'none';
+            document.getElementById('resultPage').style.display = 'flex';
         }
 
         function goBack() {
@@ -243,7 +243,7 @@
                 if(data && data.length > 0) {
                     data.forEach(f => renderFlower(f.imageData, f.message));
                 }
-            }).catch(e => console.log("期待你的第一朵花！"));
+            });
         };
 
         canvas.addEventListener('mousedown', startPosition);
