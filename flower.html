@@ -68,10 +68,27 @@
         .flowers-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
 
         .flower-item { position: absolute; display: flex; flex-direction: column; align-items: center; animation: bloom 0.8s ease-out forwards; }
-        .flower-img { width: 55px; height: 55px; object-fit: contain; }
+        
+        /* --- 這裡調大了花朵圖片尺寸 --- */
+        .flower-img { 
+            width: 85px; 
+            height: 85px; 
+            object-fit: contain; 
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.1));
+        }
+        
+        /* --- 這裡調大了祝福文字尺寸與樣式 --- */
         .flower-msg { 
-            background: rgba(255,255,255,0.95); padding: 2px 8px; border-radius: 5px; 
-            font-size: 11px; border: 1px solid #eee; white-space: nowrap; font-weight: bold; color: var(--brown-dark);
+            background: rgba(255,255,255,0.95); 
+            padding: 4px 10px; 
+            border-radius: 8px; 
+            font-size: 14px; 
+            border: 1px solid #eee; 
+            white-space: nowrap; 
+            font-weight: bold; 
+            color: var(--brown-dark);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 4px;
         }
 
         .btn-back { 
@@ -160,10 +177,15 @@
         function renderFlower(imgData, msg) {
             const flowerWrap = document.createElement('div');
             flowerWrap.className = 'flower-item';
-            const randomX = Math.random() * 40 + 5; 
-            const randomY = Math.random() * 30 + 40; 
+            
+            // --- 稍微放寬了隨機分佈的範圍，讓大花朵更有空間 ---
+            const randomX = Math.random() * 50 + 5; 
+            const randomY = Math.random() * 35 + 35; 
+            
             flowerWrap.style.left = randomX + '%';
             flowerWrap.style.top = randomY + '%';
+            flowerWrap.style.zIndex = Math.floor(randomY);
+
             flowerWrap.innerHTML = `<div class="flower-msg">${msg}</div><img src="${imgData}" class="flower-img">`;
             overlay.appendChild(flowerWrap);
         }
@@ -188,7 +210,7 @@
                 renderFlower(imageData, message);
                 clearCanvas();
                 document.getElementById('messageInput').value = "";
-                submitBtn.innerText = "送出花朵並查看花束";
+                submitBtn.innerText = "送出你的大作看成果";
                 submitBtn.disabled = false;
             });
         }
@@ -202,8 +224,10 @@
         // 預先載入舊資料
         window.onload = function() {
             fetch(API_URL).then(res => res.json()).then(data => {
-                data.forEach(f => renderFlower(f.imageData, f.message));
-            });
+                if(data && data.length > 0) {
+                    data.forEach(f => renderFlower(f.imageData, f.message));
+                }
+            }).catch(e => console.log("期待你的第一朵花！"));
         };
 
         canvas.addEventListener('mousedown', startPosition);
