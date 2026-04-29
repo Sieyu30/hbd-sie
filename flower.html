@@ -25,9 +25,9 @@
             animation: fadeIn 0.5s ease;
         }
 
-        /* 第二頁：花圃與照片畫面 (預設隱藏) */
+        /* 第二頁：花圃與照片畫面 */
         #resultPage {
-            display: none; /* 初始隱藏 */
+            display: none; 
             flex-direction: column; align-items: center;
             width: 100%; max-width: 450px;
             animation: fadeIn 0.8s ease;
@@ -35,7 +35,6 @@
 
         .page-title { color: var(--brown-light); font-size: 1.6em; margin-bottom: 15px; font-weight: bold; text-align: center; }
 
-        /* 畫板外框 */
         .canvas-wrapper {
             position: relative; background-color: #fcfaf5;
             background-image: radial-gradient(#e0ddd5 1px, transparent 0);
@@ -65,36 +64,53 @@
         }
         .photo-bg { width: 100%; height: auto; display: block; border-radius: 5px; }
         
-        .flowers-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
+        .flowers-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto; overflow: hidden; }
 
-        .flower-item { position: absolute; display: flex; flex-direction: column; align-items: center; animation: bloom 0.8s ease-out forwards; }
-        
-        /* --- 這裡調大了花朵圖片尺寸 --- */
-        .flower-img { 
-            width: 85px; 
-            height: 85px; 
-            object-fit: contain; 
-            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.1));
+        .flower-item { 
+            position: absolute; display: flex; flex-direction: column; align-items: center; 
+            animation: bloom 0.8s ease-out forwards; cursor: pointer; pointer-events: auto;
         }
         
-        /* --- 這裡調大了祝福文字尺寸與樣式 --- */
+        .flower-img { 
+            width: 85px; height: 85px; object-fit: contain; 
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.1));
+            transition: transform 0.2s;
+        }
+        
+        .flower-item:active .flower-img { transform: scale(0.9); }
+        
+        /* 留言框改為初始隱藏，點擊才出現 */
         .flower-msg { 
-            background: rgba(255,255,255,0.95); 
-            padding: 4px 10px; 
-            border-radius: 8px; 
+            background: rgba(255,255,255,0.98); 
+            padding: 6px 12px; 
+            border-radius: 12px; 
             font-size: 14px; 
-            border: 1px solid #eee; 
+            border: 2px solid var(--brown-light); 
             white-space: nowrap; 
             font-weight: bold; 
             color: var(--brown-dark);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 4px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin-bottom: 8px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* 點擊後的狀態 */
+        .flower-item.show-msg .flower-msg {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
         }
 
         .btn-back { 
             margin-top: 25px; background: #fff; color: var(--brown-light); border: 2px solid var(--brown-light);
             padding: 12px 30px; border-radius: 25px; cursor: pointer; font-weight: bold; font-size: 1em;
         }
+
+        .tip-text { color: #999; font-size: 0.85em; margin-top: 10px; }
 
         @keyframes bloom {
             0% { transform: scale(0) rotate(-15deg); opacity: 0; }
@@ -105,7 +121,6 @@
 </head>
 <body>
 
-    <!-- 第一頁：畫板頁面 -->
     <div id="drawingPage">
         <h1 class="page-title"> 今天我生日，一起來畫花🎂 </h1>
         <div class="canvas-wrapper">
@@ -125,13 +140,13 @@
         </div>
     </div>
 
-    <!-- 第二頁：結果頁面 -->
     <div id="resultPage">
         <h1 class="page-title">💐 已收集大家的生日花束 💐</h1>
         <div class="photo-frame">
             <img src="https://cdn.phototourl.com/free/2026-04-29-d29c94e6-d034-457d-8ddb-a124debfec49.jpg" class="photo-bg">
             <div class="flowers-overlay" id="flowersOverlay"></div>
         </div>
+        <p class="tip-text">點點花朵看悄悄話 👆</p>
         <button class="btn-back" onclick="goBack()">再送一朵花</button>
     </div>
 
@@ -151,7 +166,6 @@
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
-        // 畫畫功能
         function startPosition(e) { painting = true; draw(e); }
         function finishedPosition() { painting = false; ctx.beginPath(); }
         function draw(e) {
@@ -173,12 +187,10 @@
         }
         function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
-        // 顯示花朵
         function renderFlower(imgData, msg) {
             const flowerWrap = document.createElement('div');
             flowerWrap.className = 'flower-item';
             
-            // --- 稍微放寬了隨機分佈的範圍，讓大花朵更有空間 ---
             const randomX = Math.random() * 50 + 5; 
             const randomY = Math.random() * 35 + 35; 
             
@@ -187,10 +199,17 @@
             flowerWrap.style.zIndex = Math.floor(randomY);
 
             flowerWrap.innerHTML = `<div class="flower-msg">${msg}</div><img src="${imgData}" class="flower-img">`;
+            
+            // 點擊切換顯示/隱藏留言
+            flowerWrap.onclick = function(e) {
+                e.stopPropagation();
+                // 如果已經顯示，就隱藏；反之亦然
+                this.classList.toggle('show-msg');
+            };
+            
             overlay.appendChild(flowerWrap);
         }
 
-        // 送出
         function submitFlower() {
             const message = document.getElementById('messageInput').value;
             if (!message) return alert("請寫句祝福語給我吧！");
@@ -204,7 +223,6 @@
                 mode: 'no-cors',
                 body: JSON.stringify({ message: message, imageData: imageData })
             }).then(() => {
-                // 切換頁面
                 document.getElementById('drawingPage').style.display = 'none';
                 document.getElementById('resultPage').style.display = 'flex';
                 renderFlower(imageData, message);
@@ -215,13 +233,11 @@
             });
         }
 
-        // 返回按鈕
         function goBack() {
             document.getElementById('resultPage').style.display = 'none';
             document.getElementById('drawingPage').style.display = 'flex';
         }
 
-        // 預先載入舊資料
         window.onload = function() {
             fetch(API_URL).then(res => res.json()).then(data => {
                 if(data && data.length > 0) {
