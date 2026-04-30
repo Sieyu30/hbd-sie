@@ -9,7 +9,7 @@
             --brown-dark: #5d4037;
             --brown-light: #8b5e3c;
             --bg-color: #fdfcf0;
-            --bubble-bg: rgba(255, 255, 255, 0.98);
+            --bubble-bg: #ffffff;
         }
 
         body { 
@@ -28,8 +28,8 @@
         .f-3 { bottom: 10%; left: 10%; font-size: 50px; }
         .f-4 { bottom: 20%; right: 5%; font-size: 70px; }
 
-        #drawingPage { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 400px; animation: fadeIn 0.5s ease; }
-        #resultPage { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 450px; animation: fadeIn 0.8s ease; }
+        #drawingPage { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 400px; }
+        #resultPage { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 450px; }
 
         .page-title { color: var(--brown-light); font-size: 1.6em; margin-bottom: 15px; font-weight: bold; text-align: center; }
 
@@ -49,6 +49,7 @@
         input[type="text"] { padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; width: 100%; box-sizing: border-box; }
         .btn-submit { background: var(--brown-light); color: white; padding: 15px; border: none; border-radius: 10px; font-weight: bold; font-size: 1.2em; cursor: pointer; }
 
+        /* --- 互動照片區 --- */
         .photo-frame { 
             position: relative; border-radius: 15px; background: #fff;
             padding: 10px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); width: 100%; box-sizing: border-box;
@@ -58,52 +59,38 @@
         
         .flowers-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
 
-        /* --- 對話框花朵容器 --- */
+        /* --- 花朵與氣泡容器 --- */
         .flower-item { 
             position: absolute; display: flex; flex-direction: column; align-items: center; 
             cursor: grab; pointer-events: auto; touch-action: none; z-index: 10;
         }
         
-        /* 對話氣泡樣式 */
+        /* 真正的對話氣泡 */
         .flower-msg { 
-            position: relative;
-            background: var(--bubble-bg); 
-            padding: 10px 15px; 
-            border-radius: 15px; 
-            font-size: 14px; 
-            border: 2px solid var(--brown-light); 
-            white-space: nowrap; 
-            font-weight: bold; 
-            color: var(--brown-dark); 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin-bottom: 12px; /* 與花的間距 */
-            visibility: hidden; /* 改用隱藏但不消失，維持排版穩定 */
-            opacity: 0;
-            transform: scale(0.8);
+            position: relative; background: var(--bubble-bg); 
+            padding: 8px 15px; border-radius: 15px; font-size: 14px; 
+            border: 2px solid var(--brown-light); white-space: nowrap; 
+            font-weight: bold; color: var(--brown-dark); box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-bottom: 10px; visibility: hidden; opacity: 0;
+            transform: scale(0.8) translateY(10px);
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            pointer-events: none; /* 讓點擊穿透到下面的花 */
+            pointer-events: none;
         }
 
-        /* 對話框小尖角 */
+        /* 氣泡小尾巴 */
         .flower-msg::after {
-            content: "";
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-width: 10px 8px 0 8px;
-            border-style: solid;
-            border-color: var(--brown-light) transparent transparent transparent;
+            content: ""; position: absolute; bottom: -10px; left: 50%;
+            transform: translateX(-50%); border-width: 10px 8px 0 8px;
+            border-style: solid; border-color: var(--brown-light) transparent transparent transparent;
         }
 
         .flower-item.show-msg { z-index: 999 !important; }
-        .flower-item.show-msg .flower-msg { visibility: visible; opacity: 1; transform: scale(1); }
+        .flower-item.show-msg .flower-msg { visibility: visible; opacity: 1; transform: scale(1) translateY(0); }
 
         .flower-img { 
             width: 70px; height: 70px; object-fit: contain; 
-            filter: drop-shadow(2px 3px 4px rgba(0,0,0,0.3)); 
-            animation: swing 3s ease-in-out infinite; 
-            pointer-events: none;
+            filter: drop-shadow(2px 3px 4px rgba(0,0,0,0.2)); 
+            animation: swing 3s ease-in-out infinite; pointer-events: none;
         }
 
         .btn-back { margin-top: 25px; background: #fff; color: var(--brown-light); border: 2px solid var(--brown-light); padding: 12px 30px; border-radius: 25px; cursor: pointer; font-weight: bold; }
@@ -178,12 +165,12 @@
         function makeInteractive(el) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
             let startX, startY, startTime;
-            let hasMoved = false;
+            let moved = false;
 
-            el.onmousedown = startTracking;
-            el.ontouchstart = startTracking;
+            el.addEventListener('mousedown', startTrack);
+            el.addEventListener('touchstart', startTrack, {passive: false});
 
-            function startTracking(e) {
+            function startTrack(e) {
                 highestZ++;
                 el.style.zIndex = highestZ;
                 startTime = new Date().getTime();
@@ -191,20 +178,19 @@
                 const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
                 startX = clientX; startY = clientY;
                 pos3 = clientX; pos4 = clientY;
-                hasMoved = false;
-                document.onmouseup = endTracking;
-                document.onmousemove = moveElement;
-                document.ontouchend = endTracking;
-                document.ontouchmove = moveElement;
+                moved = false;
+
+                document.addEventListener('mousemove', moveTrack);
+                document.addEventListener('touchmove', moveTrack, {passive: false});
+                document.addEventListener('mouseup', endTrack);
+                document.addEventListener('touchend', endTrack);
             }
 
-            function moveElement(e) {
+            function moveTrack(e) {
                 const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-                if (Math.abs(clientX - startX) > 8 || Math.abs(clientY - startY) > 8) {
-                    hasMoved = true;
-                }
-                if (hasMoved) {
+                if (Math.abs(clientX - startX) > 10 || Math.abs(clientY - startY) > 10) moved = true;
+                if (moved) {
                     pos1 = pos3 - clientX; pos2 = pos4 - clientY;
                     pos3 = clientX; pos4 = clientY;
                     el.style.top = (el.offsetTop - pos2) + "px";
@@ -212,34 +198,28 @@
                 }
             }
 
-            function endTracking() {
-                const endTime = new Date().getTime();
-                if (!hasMoved || (endTime - startTime < 200)) {
+            function endTrack() {
+                const duration = new Date().getTime() - startTime;
+                if (!moved || duration < 200) {
                     el.classList.toggle('show-msg');
                 }
-                document.onmouseup = null; document.onmousemove = null;
-                document.ontouchend = null; document.ontouchmove = null;
+                document.removeEventListener('mousemove', moveTrack);
+                document.removeEventListener('touchmove', moveTrack);
+                document.removeEventListener('mouseup', endTrack);
+                document.removeEventListener('touchend', endTrack);
             }
         }
 
         function renderFlower(imgData, msg) {
             const flowerWrap = document.createElement('div');
             flowerWrap.className = 'flower-item';
-            // 初始隨機散佈範圍
             const randomX = Math.random() * 55 + 15; 
             const randomY = Math.random() * 12 + 43; 
             flowerWrap.style.left = randomX + '%';
             flowerWrap.style.top = randomY + '%';
-
             const dur = (Math.random() * 2 + 2).toFixed(2);
             const del = (Math.random() * 2).toFixed(2);
-            
-            // 結構優化：對話框在上面，花在下面
-            flowerWrap.innerHTML = `
-                <div class="flower-msg">${msg}</div>
-                <img src="${imgData}" class="flower-img" style="animation-duration:${dur}s; animation-delay:-${del}s;">
-            `;
-            
+            flowerWrap.innerHTML = `<div class="flower-msg">${msg}</div><img src="${imgData}" class="flower-img" style="animation-duration:${dur}s; animation-delay:-${del}s;">`;
             overlay.appendChild(flowerWrap);
             makeInteractive(flowerWrap);
         }
