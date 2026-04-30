@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>今天我生日，一起來畫花吧🎂</title>
+    <title>今天我生日，一起來畫花🎂</title>
     <style>
         :root {
             --brown-dark: #5d4037;
@@ -69,13 +69,12 @@
         
         .btn-submit { background: var(--brown-light); color: white; padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1.2em; box-shadow: 0 4px 10px rgba(139,94,60,0.3); }
 
-        /* 「看看大家送的花」按鈕樣式 */
         .btn-view-only {
             background: transparent; color: #999; text-decoration: underline;
             border: none; margin-top: 10px; cursor: pointer; font-size: 0.9em;
         }
 
-        /* 照片框與集結區 */
+        /* --- 照片框與集結區 --- */
         .photo-frame { 
             position: relative; border-radius: 15px; background: #fff;
             padding: 10px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); width: 100%; box-sizing: border-box;
@@ -86,12 +85,17 @@
 
         .flower-item { 
             position: absolute; display: flex; flex-direction: column; align-items: center; 
-            animation: bloom 0.8s ease-out forwards; cursor: pointer; pointer-events: auto;
+            animation: bloom 0.8s ease-out forwards; 
+            cursor: pointer; pointer-events: auto;
+            transform-origin: bottom center; /* 以底部為中心點擺動 */
         }
-        
+
+        /* --- 擺動動畫效果 --- */
         .flower-img { 
             width: 85px; height: 85px; object-fit: contain; 
-            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.1)); transition: transform 0.2s;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.1)); 
+            transition: transform 0.2s;
+            animation: swing 3s ease-in-out infinite; /* 套用左右擺動 */
         }
         
         .flower-msg { 
@@ -111,10 +115,19 @@
 
         .tip-text { color: #999; font-size: 0.85em; margin-top: 10px; }
 
+        /* --- 定義動畫 --- */
         @keyframes bloom {
             0% { transform: scale(0) rotate(-15deg); opacity: 0; }
             100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
+
+        /* 左右擺動動畫 */
+        @keyframes swing {
+            0% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+            100% { transform: rotate(-3deg); }
+        }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
@@ -127,7 +140,7 @@
     <div class="bg-flower f-5">🌻</div>
 
     <div id="drawingPage">
-        <h1 class="page-title"> 今天我生日，約你一起來畫花🎂 </h1>
+        <h1 class="page-title"> 今天我生日，一起來畫花🎂 </h1>
         <div class="canvas-wrapper">
             <canvas id="paintCanvas" width="300" height="300"></canvas>
         </div>
@@ -142,8 +155,7 @@
             <div class="message-label">你想對我說的話是？(◕u◕)</div>
             <input type="text" id="messageInput" placeholder="這邊輸入悄悄話...">
             <button class="btn-submit" id="submitBtn" onclick="submitFlower()">送出你的大作看成果</button>
-            <!-- 新增跳過按鈕 -->
-            <button class="btn-view-only" onclick="goToResult()"> 🌸先去看看大家都送什麼花🌸 </button>
+            <button class="btn-view-only" onclick="goToResult()">先去看看大家送的花 bouquet </button>
         </div>
     </div>
 
@@ -197,12 +209,23 @@
         function renderFlower(imgData, msg) {
             const flowerWrap = document.createElement('div');
             flowerWrap.className = 'flower-item';
+            
             const randomX = Math.random() * 50 + 5; 
             const randomY = Math.random() * 35 + 35; 
+            
             flowerWrap.style.left = randomX + '%';
             flowerWrap.style.top = randomY + '%';
             flowerWrap.style.zIndex = Math.floor(randomY);
-            flowerWrap.innerHTML = `<div class="flower-msg">${msg}</div><img src="${imgData}" class="flower-img">`;
+
+            // --- 讓每朵花的擺動頻率有一點不同，看起來更自然 ---
+            const randomDuration = (Math.random() * 2 + 2).toFixed(2); // 2~4秒之間
+            const randomDelay = (Math.random() * 2).toFixed(2); // 0~2秒延遲
+            
+            flowerWrap.innerHTML = `
+                <div class="flower-msg">${msg}</div>
+                <img src="${imgData}" class="flower-img" style="animation-duration: ${randomDuration}s; animation-delay: -${randomDelay}s;">
+            `;
+
             flowerWrap.onclick = function(e) { e.stopPropagation(); this.classList.toggle('show-msg'); };
             overlay.appendChild(flowerWrap);
         }
@@ -218,7 +241,7 @@
                 mode: 'no-cors',
                 body: JSON.stringify({ message: message, imageData: imageData })
             }).then(() => {
-                goToResult(); // 改成使用跳轉函數
+                goToResult();
                 renderFlower(imageData, message);
                 clearCanvas();
                 document.getElementById('messageInput').value = "";
@@ -227,7 +250,6 @@
             });
         }
 
-        // 新增：直接跳轉到結果頁面
         function goToResult() {
             document.getElementById('drawingPage').style.display = 'none';
             document.getElementById('resultPage').style.display = 'flex';
