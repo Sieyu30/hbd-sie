@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>今天我生日，一起來畫花🎂</title>
+    <title>It's my birthday!一起來畫花🎂</title>
     <style>
         :root {
             --brown-dark: #5d4037;
@@ -49,11 +49,11 @@
         input[type="text"] { padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; width: 100%; box-sizing: border-box; }
         .btn-submit { background: var(--brown-light); color: white; padding: 15px; border: none; border-radius: 10px; font-weight: bold; font-size: 1.2em; cursor: pointer; }
 
-        /* --- 核心照片與花朵集結區 --- */
+        /* --- 核心照片與花朵集結區 (精準調整) --- */
         .photo-frame { 
             position: relative; border-radius: 15px; background: #fff;
             padding: 10px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); width: 100%; box-sizing: border-box;
-            line-height: 0; /* 防止圖片下方出現多餘空隙 */
+            line-height: 0; 
         }
         .photo-bg { width: 100%; height: auto; display: block; border-radius: 5px; }
         
@@ -62,7 +62,7 @@
             position: absolute; 
             top: 0; left: 0; 
             width: 100%; height: 100%; 
-            pointer-events: auto; /* 允許點擊花朵 */
+            pointer-events: auto; 
         }
 
         .flower-item { 
@@ -71,12 +71,16 @@
             animation: bloom 0.8s ease-out forwards; 
             cursor: pointer;
             transform-origin: bottom center;
+            /* 修正定位基準點，讓 X 隨機點代表花朵的中心 */
+            transform: translate(-50%, -100%); 
         }
 
-        /* 花朵圖片樣式與擺動 */
+        /* --- 縮小花朵尺寸，讓它們更精緻地待在紙袋內 --- */
         .flower-img { 
-            width: 80px; height: 80px; object-fit: contain; 
-            filter: drop-shadow(2px 4px 5px rgba(0,0,0,0.2)); 
+            width: 60px; /* 從 80px 縮小到 60px */
+            height: 60px; 
+            object-fit: contain; 
+            filter: drop-shadow(2px 3px 4px rgba(0,0,0,0.3)); 
             animation: swing 3s ease-in-out infinite;
         }
         
@@ -93,7 +97,6 @@
 
         .btn-back { margin-top: 25px; background: #fff; color: var(--brown-light); border: 2px solid var(--brown-light); padding: 12px 30px; border-radius: 25px; cursor: pointer; font-weight: bold; }
 
-        /* 動畫定義 */
         @keyframes bloom { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes swing { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -164,11 +167,11 @@
             const flowerWrap = document.createElement('div');
             flowerWrap.className = 'flower-item';
             
-            // --- 關鍵修正：鎖定包裝紙開口範圍 ---
-            // 橫向 X: 鎖定在 15% 到 60% 之間 (照片中的包裝紙寬度)
-            const randomX = Math.random() * 45 + 15; 
-            // 縱向 Y: 鎖定在 40% 到 55% 之間 (包裝紙上緣開口處)
-            const randomY = Math.random() * 15 + 40; 
+            // --- 絕對精準的座標鎖定 (大幅縮小範圍) ---
+            // 橫向 X: 鎖定在 20% 到 55% 之間 
+            const randomX = Math.random() * 35 + 20; 
+            // 縱向 Y: 鎖定在照片高度的 43% 到 53% 之間的窄帶 (包裝紙上緣)
+            const randomY = Math.random() * 10 + 43; 
             
             flowerWrap.style.left = randomX + '%';
             flowerWrap.style.top = randomY + '%';
@@ -179,7 +182,7 @@
             const del = (Math.random() * 2).toFixed(2);
             
             flowerWrap.innerHTML = `<div class="flower-msg">${msg}</div><img src="${imgData}" class="flower-img" style="animation-duration:${dur}s; animation-delay:-${del}s;">`;
-            flowerWrap.onclick = function(e) { e.stopPropagation(); this.classList.toggle('show-msg'); };
+            flowerWrap.onclick = function(e) { e.stopPropagation(); this.classList.remove('show-msg'); this.classList.add('show-msg'); };
             overlay.appendChild(flowerWrap);
         }
 
