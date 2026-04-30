@@ -27,13 +27,11 @@
         .f-3 { bottom: 10%; left: 10%; font-size: 50px; }
         .f-4 { bottom: 20%; right: 5%; font-size: 70px; }
 
-        /* 頁面切換 */
         #drawingPage { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 400px; animation: fadeIn 0.5s ease; }
         #resultPage { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 450px; animation: fadeIn 0.8s ease; }
 
         .page-title { color: var(--brown-light); font-size: 1.6em; margin-bottom: 15px; font-weight: bold; text-align: center; }
 
-        /* 畫板 */
         .canvas-wrapper {
             position: relative; background-color: #fcfaf5;
             background-image: radial-gradient(#e0ddd5 1px, transparent 0);
@@ -43,14 +41,13 @@
         canvas { cursor: crosshair; touch-action: none; display: block; }
         
         .tool-bar { display: flex; gap: 8px; background: #fff; padding: 10px; border-radius: 10px; margin-bottom: 15px; }
-        .tool-btn { padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; background: white; font-weight: bold; font-size: 14px; }
+        .tool-btn { padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; background: white; font-weight: bold; }
         .tool-btn.active { background: var(--brown-light); color: white; border-color: var(--brown-light); }
 
         .controls { width: 100%; display: flex; flex-direction: column; gap: 12px; }
         input[type="text"] { padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; width: 100%; box-sizing: border-box; }
         .btn-submit { background: var(--brown-light); color: white; padding: 15px; border: none; border-radius: 10px; font-weight: bold; font-size: 1.2em; cursor: pointer; }
 
-        /* --- 互動照片區 --- */
         .photo-frame { 
             position: relative; border-radius: 15px; background: #fff;
             padding: 10px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); width: 100%; box-sizing: border-box;
@@ -58,36 +55,27 @@
         }
         .photo-bg { width: 100%; height: auto; display: block; border-radius: 5px; pointer-events: none; }
         
-        .flowers-overlay { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            pointer-events: none; overflow: hidden;
-        }
+        .flowers-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
 
         .flower-item { 
             position: absolute; display: flex; flex-direction: column; align-items: center; 
-            cursor: grab; pointer-events: auto; touch-action: none;
-            z-index: 10;
+            cursor: grab; pointer-events: auto; touch-action: none; z-index: 10;
         }
         .flower-item:active { cursor: grabbing; }
 
         .flower-img { 
             width: 75px; height: 75px; object-fit: contain; 
             filter: drop-shadow(2px 3px 4px rgba(0,0,0,0.3)); 
-            animation: swing 3s ease-in-out infinite;
-            pointer-events: none;
+            animation: swing 3s ease-in-out infinite; pointer-events: none;
         }
         
-        /* 留言框：初始完全隱藏 */
         .flower-msg { 
             background: rgba(255,255,255,0.98); padding: 8px 14px; border-radius: 12px; 
             font-size: 14px; border: 2px solid var(--brown-light); white-space: nowrap; 
             font-weight: bold; color: var(--brown-dark); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin-bottom: 8px; pointer-events: none;
-            display: none; /* 改用 display 切換確保不擋到 */
-            z-index: 100;
+            margin-bottom: 8px; pointer-events: none; display: none; z-index: 100;
         }
 
-        /* 顯示狀態 */
         .flower-item.show-msg { z-index: 999 !important; }
         .flower-item.show-msg .flower-msg { display: block; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
@@ -142,7 +130,6 @@
 
         ctx.lineCap = 'round'; ctx.lineJoin = 'round';
 
-        // 畫板功能
         function startPosition(e) { painting = true; draw(e); }
         function finishedPosition() { painting = false; ctx.beginPath(); }
         function draw(e) {
@@ -161,22 +148,23 @@
         function updateBtn(id) { document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.add('active'); }
         function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
-        // --- 互動功能：改進拖動與點擊切換 ---
+        // --- 核心優化：更靈敏的點擊與拖動判定 ---
         let highestZ = 100;
         
         function makeInteractive(el) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            let startX, startY, moved = false;
+            let startX, startY, startTime;
+            let hasMoved = false;
 
             el.onmousedown = startTracking;
             el.ontouchstart = startTracking;
 
             function startTracking(e) {
-                e = e || window.event;
-                moved = false; 
+                // e.preventDefault(); // 註冊點擊不阻止默認行為，讓 click 能發生
                 highestZ++;
                 el.style.zIndex = highestZ;
 
+                startTime = new Date().getTime();
                 const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
                 
@@ -184,6 +172,7 @@
                 startY = clientY;
                 pos3 = clientX;
                 pos4 = clientY;
+                hasMoved = false;
 
                 document.onmouseup = endTracking;
                 document.onmousemove = moveElement;
@@ -192,28 +181,33 @@
             }
 
             function moveElement(e) {
-                e = e || window.event;
                 const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
 
-                // 判斷移動距離是否超過門檻值，超過才算「拖動」
-                if (Math.abs(clientX - startX) > 5 || Math.abs(clientY - startY) > 5) {
-                    moved = true;
+                // 容錯機制：移動超過 10 像素才判定為拖曳
+                if (Math.abs(clientX - startX) > 10 || Math.abs(clientY - startY) > 10) {
+                    hasMoved = true;
                 }
 
-                pos1 = pos3 - clientX;
-                pos2 = pos4 - clientY;
-                pos3 = clientX;
-                pos4 = clientY;
-                el.style.top = (el.offsetTop - pos2) + "px";
-                el.style.left = (el.offsetLeft - pos1) + "px";
+                if (hasMoved) {
+                    pos1 = pos3 - clientX;
+                    pos2 = pos4 - clientY;
+                    pos3 = clientX;
+                    pos4 = clientY;
+                    el.style.top = (el.offsetTop - pos2) + "px";
+                    el.style.left = (el.offsetLeft - pos1) + "px";
+                }
             }
 
             function endTracking() {
-                // 如果沒有明顯移動，判定為「點擊」，切換留言顯示
-                if (!moved) {
+                const endTime = new Date().getTime();
+                const duration = endTime - startTime;
+
+                // 靈敏判定：移動距離小於 10px OR 按住時間小於 250ms，都算點擊
+                if (!hasMoved || duration < 250) {
                     el.classList.toggle('show-msg');
                 }
+
                 document.onmouseup = null;
                 document.onmousemove = null;
                 document.ontouchend = null;
@@ -225,9 +219,9 @@
             const flowerWrap = document.createElement('div');
             flowerWrap.className = 'flower-item';
             
-            // --- 初始位置優化：擴大橫向，縮小縱向範圍，減少重疊 ---
-            const randomX = Math.random() * 60 + 10; // 10% ~ 70% 橫向散開
-            const randomY = Math.random() * 10 + 45; // 45% ~ 55% 高度集中在包裝口
+            // 散開初始位置
+            const randomX = Math.random() * 60 + 15; 
+            const randomY = Math.random() * 12 + 43; 
             
             flowerWrap.style.left = randomX + '%';
             flowerWrap.style.top = randomY + '%';
