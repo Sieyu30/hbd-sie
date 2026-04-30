@@ -9,6 +9,7 @@
             --brown-dark: #5d4037;
             --brown-light: #8b5e3c;
             --bg-color: #fdfcf0;
+            --bubble-bg: rgba(255, 255, 255, 0.98);
         }
 
         body { 
@@ -57,31 +58,56 @@
         
         .flowers-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
 
+        /* --- 對話框花朵容器 --- */
         .flower-item { 
             position: absolute; display: flex; flex-direction: column; align-items: center; 
             cursor: grab; pointer-events: auto; touch-action: none; z-index: 10;
         }
-        .flower-item:active { cursor: grabbing; }
-
-        .flower-img { 
-            width: 75px; height: 75px; object-fit: contain; 
-            filter: drop-shadow(2px 3px 4px rgba(0,0,0,0.3)); 
-            animation: swing 3s ease-in-out infinite; pointer-events: none;
-        }
         
+        /* 對話氣泡樣式 */
         .flower-msg { 
-            background: rgba(255,255,255,0.98); padding: 8px 14px; border-radius: 12px; 
-            font-size: 14px; border: 2px solid var(--brown-light); white-space: nowrap; 
-            font-weight: bold; color: var(--brown-dark); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin-bottom: 8px; pointer-events: none; display: none; z-index: 100;
+            position: relative;
+            background: var(--bubble-bg); 
+            padding: 10px 15px; 
+            border-radius: 15px; 
+            font-size: 14px; 
+            border: 2px solid var(--brown-light); 
+            white-space: nowrap; 
+            font-weight: bold; 
+            color: var(--brown-dark); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin-bottom: 12px; /* 與花的間距 */
+            visibility: hidden; /* 改用隱藏但不消失，維持排版穩定 */
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none; /* 讓點擊穿透到下面的花 */
+        }
+
+        /* 對話框小尖角 */
+        .flower-msg::after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 10px 8px 0 8px;
+            border-style: solid;
+            border-color: var(--brown-light) transparent transparent transparent;
         }
 
         .flower-item.show-msg { z-index: 999 !important; }
-        .flower-item.show-msg .flower-msg { display: block; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .flower-item.show-msg .flower-msg { visibility: visible; opacity: 1; transform: scale(1); }
+
+        .flower-img { 
+            width: 70px; height: 70px; object-fit: contain; 
+            filter: drop-shadow(2px 3px 4px rgba(0,0,0,0.3)); 
+            animation: swing 3s ease-in-out infinite; 
+            pointer-events: none;
+        }
 
         .btn-back { margin-top: 25px; background: #fff; color: var(--brown-light); border: 2px solid var(--brown-light); padding: 12px 30px; border-radius: 25px; cursor: pointer; font-weight: bold; }
 
-        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes swing { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -114,7 +140,7 @@
             <img src="https://cdn.phototourl.com/free/2026-04-29-d29c94e6-d034-457d-8ddb-a124debfec49.jpg" class="photo-bg">
             <div class="flowers-overlay" id="flowersOverlay"></div>
         </div>
-        <p style="color:#999; font-size:0.85em; margin-top:10px;">🌸 點一下看留言，長按可搬動花朵 🌸</p>
+        <p style="color:#999; font-size:0.85em; margin-top:10px;">🌸 點一下看留言，長按搬動花朵 🌸</p>
         <button class="btn-back" onclick="goBack()">我也要送一朵</button>
     </div>
 
@@ -148,9 +174,7 @@
         function updateBtn(id) { document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.add('active'); }
         function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
-        // --- 核心優化：更靈敏的點擊與拖動判定 ---
         let highestZ = 100;
-        
         function makeInteractive(el) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
             let startX, startY, startTime;
@@ -160,20 +184,14 @@
             el.ontouchstart = startTracking;
 
             function startTracking(e) {
-                // e.preventDefault(); // 註冊點擊不阻止默認行為，讓 click 能發生
                 highestZ++;
                 el.style.zIndex = highestZ;
-
                 startTime = new Date().getTime();
                 const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-                
-                startX = clientX;
-                startY = clientY;
-                pos3 = clientX;
-                pos4 = clientY;
+                startX = clientX; startY = clientY;
+                pos3 = clientX; pos4 = clientY;
                 hasMoved = false;
-
                 document.onmouseup = endTracking;
                 document.onmousemove = moveElement;
                 document.ontouchend = endTracking;
@@ -183,17 +201,12 @@
             function moveElement(e) {
                 const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-
-                // 容錯機制：移動超過 10 像素才判定為拖曳
-                if (Math.abs(clientX - startX) > 10 || Math.abs(clientY - startY) > 10) {
+                if (Math.abs(clientX - startX) > 8 || Math.abs(clientY - startY) > 8) {
                     hasMoved = true;
                 }
-
                 if (hasMoved) {
-                    pos1 = pos3 - clientX;
-                    pos2 = pos4 - clientY;
-                    pos3 = clientX;
-                    pos4 = clientY;
+                    pos1 = pos3 - clientX; pos2 = pos4 - clientY;
+                    pos3 = clientX; pos4 = clientY;
                     el.style.top = (el.offsetTop - pos2) + "px";
                     el.style.left = (el.offsetLeft - pos1) + "px";
                 }
@@ -201,35 +214,31 @@
 
             function endTracking() {
                 const endTime = new Date().getTime();
-                const duration = endTime - startTime;
-
-                // 靈敏判定：移動距離小於 10px OR 按住時間小於 250ms，都算點擊
-                if (!hasMoved || duration < 250) {
+                if (!hasMoved || (endTime - startTime < 200)) {
                     el.classList.toggle('show-msg');
                 }
-
-                document.onmouseup = null;
-                document.onmousemove = null;
-                document.ontouchend = null;
-                document.ontouchmove = null;
+                document.onmouseup = null; document.onmousemove = null;
+                document.ontouchend = null; document.ontouchmove = null;
             }
         }
 
         function renderFlower(imgData, msg) {
             const flowerWrap = document.createElement('div');
             flowerWrap.className = 'flower-item';
-            
-            // 散開初始位置
-            const randomX = Math.random() * 60 + 15; 
+            // 初始隨機散佈範圍
+            const randomX = Math.random() * 55 + 15; 
             const randomY = Math.random() * 12 + 43; 
-            
             flowerWrap.style.left = randomX + '%';
             flowerWrap.style.top = randomY + '%';
 
             const dur = (Math.random() * 2 + 2).toFixed(2);
             const del = (Math.random() * 2).toFixed(2);
             
-            flowerWrap.innerHTML = `<div class="flower-msg">${msg}</div><img src="${imgData}" class="flower-img" style="animation-duration:${dur}s; animation-delay:-${del}s;">`;
+            // 結構優化：對話框在上面，花在下面
+            flowerWrap.innerHTML = `
+                <div class="flower-msg">${msg}</div>
+                <img src="${imgData}" class="flower-img" style="animation-duration:${dur}s; animation-delay:-${del}s;">
+            `;
             
             overlay.appendChild(flowerWrap);
             makeInteractive(flowerWrap);
